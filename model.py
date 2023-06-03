@@ -3,7 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 # Create the engine to connect to the SQLite database
-engine = create_engine('sqlite:///database.db', echo=True)  # Replace with your database file path
+engine = create_engine('sqlite:///database.db', echo=False)  # Replace with your database file path
 
 # Create a base class for declarative models
 Base = declarative_base()
@@ -16,6 +16,14 @@ class Topic(Base):
     topic_name = Column(String)
     parent_topic_id = Column(Integer)
     is_linkedin_scanned_skill = Column(Boolean)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'topic_name': self.topic_name,
+            'parent_topic_id': self.parent_topic_id,
+            'is_linkedin_scanned_skill': self.is_linkedin_scanned_skill
+        }
 
 class UserProfile(Base):
     __tablename__ = 'user_profile'

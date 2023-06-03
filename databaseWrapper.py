@@ -18,6 +18,21 @@ class db_wrapper:
         self.session.add(new_topic)
         self.session.commit()
 
+    def get_all_topics(self):
+        topics = self.session.query(Topic).all()
+        if len(topics) > 0:
+            topic_dicts = [topic.to_dict() for topic in topics]
+            return topic_dicts
+        else:
+            return None
+    
+    def get_user_name(self):
+        name = self.session.query(UserProfile).first()
+        if name:
+            return name.user_name
+        else:
+            return None
+    
     def add_new_profile(self, user_name):
         new_profile = UserProfile(user_name=user_name)
         self.session.add(new_profile)
