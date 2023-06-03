@@ -131,6 +131,7 @@ env.bak/
 venv.bak/
 lazy/
 .chroma/
+*.db
 
 # Spyder project settings
 .spyderproject
