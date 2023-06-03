@@ -129,8 +129,7 @@ ENV/
 .vscode/
 env.bak/
 venv.bak/
-langChain/
-langChainenv/
+lazy/
 .chroma/
 
 # Spyder project settings
