@@ -1,4 +1,4 @@
-import json, time
+import json, time, os
 import streamlit as st
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
@@ -19,7 +19,7 @@ def main():
                        layout='wide',
                         page_icon=':🦥:'
     )
-    db = db_wrapper()
+    db = db_wrapper(os.environ['SQLite_path'])
 
     user_name = ''
     skills = []
@@ -49,13 +49,18 @@ def main():
                         for skill in skills:
                             st.caption(skill)
                         db.add_new_topics(skills)
-                        time.sleep(1)
+                        time.sleep(2)
                         success.empty()
+                        st.experimental_rerun()
 
         else:
-            st.button("Reset App")
+            reset = st.button("Reset App")
+            if reset:
+                # Truncate all tables
+                db.reset_database()
+                st.experimental_rerun()
                 
-    if user_name != "":
+    if user_name is not None:
         topics = db.get_all_topics()
         st.header("Welcome {}".format(user_name))
         st.subheader("List of Topics")
@@ -63,8 +68,8 @@ def main():
         if topics:
             for topic in topics:
                 st.info("**{}**".format(topic['topic_name']))
-                st.radio("Actions", ["Create Sub topic", "Delete topic", "Generate Article"], horizontal=True, key=topic['topic_name'])
-                st.button("Act Upon", key=topic['id'])
+                action = st.radio("Actions", ["Create Sub topic", "Delete topic", "Generate Article"], horizontal=True, key=topic['topic_name'])
+                st.button("Get going", key=topic['id'])
                 st.divider()
 
 
