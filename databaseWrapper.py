@@ -1,11 +1,14 @@
-from model import engine, Topic, UserProfile, ArticleTitle, ArticleContent
+from model import Topic, UserProfile, ArticleTitle, ArticleContent
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import MetaData, create_engine
 
 
 class db_wrapper:
-    def __init__(self):
-        self.Session = sessionmaker(bind=engine)
+    def __init__(self, db_path):
+        self.engine = create_engine(db_path)
+        self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
+        self.metadata = MetaData()
 
     def add_new_topics(self, topic_list):
         for topic in topic_list:
@@ -55,5 +58,17 @@ class db_wrapper:
             self.session.add(new_article_title)
             self.session.commit()
         self.session.close()
+
+    def reset_database(self):
+        self.metadata.reflect(bind=self.engine)
+
+        # with self.session.begin():
+        #     for table in reversed(self.metadata.sorted_tables):
+        #         self.session.execute(table.delete())
+
+        self.metadata.drop_all(bind=self.engine)
+        self.metadata.bind = self.engine
+        self.metadata.create_all(bind=self.engine)
+
 
     
