@@ -29,6 +29,23 @@ class db_wrapper:
             return topic_dicts
         else:
             return None
+        
+    def get_topic_id(self, topic_name):
+        topic = self.session.query(Topic).filter_by(topic_name=topic_name).first()
+        self.session.close()
+        if topic:
+            return topic.id
+        else:
+            return None
+        
+    def delete_topic(self, topic_id):
+        topic = self.session.query(Topic).filter_by(id=topic_id).first()
+        if topic:
+            self.session.delete(topic)
+            self.session.commit()
+            return True
+        else:
+            return False
     
     def get_user_name(self):
         name = self.session.query(UserProfile).first()
@@ -42,14 +59,6 @@ class db_wrapper:
         self.session.add(new_profile)
         self.session.commit()
         self.session.close()
-
-    def get_topic_id(self, topic_name):
-        topic = self.session.query(Topic).filter_by(topic_name=topic_name).first()
-        self.session.close()
-        if topic:
-            return topic.id
-        else:
-            return None
     
     def add_new_article_title(self, topic_name, article_title, is_approved, is_publish):
         # get topic_id from get_topic_id function using topic_name

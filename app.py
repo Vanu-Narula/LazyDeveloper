@@ -5,6 +5,10 @@ from PyPDF2 import PdfReader
 import langChainWrapper
 from databaseWrapper import db_wrapper
 
+def user_input_submit():
+    st.session_state.topic_user_input = st.session_state.topic_input
+    st.session_state.topic_input = ""
+
 def add_new_row(row_label):
     new_row = create_new_row(row_label)
     st.session_state.rows.append(new_row)
@@ -24,6 +28,9 @@ def write_article(rows, index):
         # Call the write_article function in LangChainWrapper class
         # lang_chain_wrapper.write_article(rows[index])
         rows[index]['write_article'] = True
+
+def create_subtopic():
+    pass
 
 def extract_pdf_text(pdf):
     combined_text = ''
@@ -89,13 +96,16 @@ def main():
         if 'topic_added' not in st.session_state:
             st.session_state.topic_added = False
 
+        if 'topic_user_input' not in st.session_state:
+            st.session_state.topic_user_input = ''
+
         col1, col2 = st.columns([2, 1])
         with col1:
             st.subheader("Your interests")
         with col2:
-            user_topic_name = st.text_input(label="Add topic to list", placeholder="Topic name")
-            if user_topic_name is not None and user_topic_name != "":
-                new_topic = db.add_new_topic(user_topic_name, False)
+            user_topic_name = st.text_input(label="Add topic to list", placeholder="Topic name", key='topic_input', on_change=user_input_submit)
+            if st.session_state.topic_user_input is not None and st.session_state.topic_user_input != "":
+                new_topic = db.add_new_topic(st.session_state.topic_user_input, False)
                 add_new_row(new_topic)
         if topics and not st.session_state.topic_added:
             for topic in topics:
@@ -109,14 +119,20 @@ def main():
             
             delete_button_key = f"delete_{i}"
             write_button_key = f"write_{i}"
+            create_subtopic_key = f"create_{i}"
             
-            delete_button_col, write_button_col = st.columns([1, 1])
+            button_container = st.empty()
+            delete_button_col, write_button_col, create_subtopic_col = button_container.columns([1, 1, 1])
             if delete_button_col.button(f"Delete Row", key=delete_button_key):
                 st.session_state.rows = delete_rows(st.session_state.rows, [i])
+                db.delete_topic(row['label']['id'])
                 st.experimental_rerun()
                 
             if write_button_col.button("Write Article", key=write_button_key):
                 write_article(st.session_state.rows, i)
+
+            if create_subtopic_col.button("Gen subtopic", key=create_subtopic_key):
+                create_subtopic()
 
 
 if __name__ == '__main__':
