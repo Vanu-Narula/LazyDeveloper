@@ -5,6 +5,25 @@ from PyPDF2 import PdfReader
 import langChainWrapper
 from databaseWrapper import db_wrapper
 
+def add_new_row(row_label):
+    new_row = create_new_row(row_label)
+    st.session_state.rows.append(new_row)
+
+def create_new_row(label):
+    return {
+        'label': label,
+        'delete': False,
+        'write_article': False
+    }
+
+def delete_rows(rows, indices):
+    return [row for i, row in enumerate(rows) if i not in indices]
+
+def write_article(rows, index):
+    if index < len(rows):
+        # Call the write_article function in LangChainWrapper class
+        # lang_chain_wrapper.write_article(rows[index])
+        rows[index]['write_article'] = True
 
 def extract_pdf_text(pdf):
     combined_text = ''
@@ -63,14 +82,41 @@ def main():
     if user_name is not None:
         topics = db.get_all_topics()
         st.header("Welcome {}".format(user_name))
-        st.subheader("List of Topics")
-        st.divider()
-        if topics:
+
+        if 'rows' not in st.session_state:
+            st.session_state.rows = []
+
+        if 'topic_added' not in st.session_state:
+            st.session_state.topic_added = False
+
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            st.subheader("Your interests")
+        with col2:
+            user_topic_name = st.text_input(label="Add topic to list", placeholder="Topic name")
+            if user_topic_name is not None and user_topic_name != "":
+                new_topic = db.add_new_topic(user_topic_name, False)
+                add_new_row(new_topic)
+        if topics and not st.session_state.topic_added:
             for topic in topics:
-                st.info("**{}**".format(topic['topic_name']))
-                action = st.radio("Actions", ["Create Sub topic", "Delete topic", "Generate Article"], horizontal=True, key=topic['topic_name'])
-                st.button("Get going", key=topic['id'])
-                st.divider()
+                add_new_row(topic)
+                st.session_state.topic_added = True
+
+        # Display rows
+        for i, row in enumerate(st.session_state.rows):
+            st.divider()
+            st.info(row['label']['topic_name'])
+            
+            delete_button_key = f"delete_{i}"
+            write_button_key = f"write_{i}"
+            
+            delete_button_col, write_button_col = st.columns([1, 1])
+            if delete_button_col.button(f"Delete Row", key=delete_button_key):
+                st.session_state.rows = delete_rows(st.session_state.rows, [i])
+                st.experimental_rerun()
+                
+            if write_button_col.button("Write Article", key=write_button_key):
+                write_article(st.session_state.rows, i)
 
 
 if __name__ == '__main__':

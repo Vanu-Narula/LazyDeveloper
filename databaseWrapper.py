@@ -16,10 +16,11 @@ class db_wrapper:
             self.session.add(new_topic)
             self.session.commit()
 
-    def add_new_topic(self, topic, parent_topic_id, is_primary):
+    def add_new_topic(self, topic, is_primary, parent_topic_id=None):
         new_topic = Topic(topic_name=topic, parent_topic_id=parent_topic_id, is_linkedin_scanned_skill=is_primary)
         self.session.add(new_topic)
         self.session.commit()
+        return new_topic.to_dict()
 
     def get_all_topics(self):
         topics = self.session.query(Topic).all()
