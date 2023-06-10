@@ -1,3 +1,11 @@
+Installations
+
+1. Create virtual python environment
+2. Install requirement file
+    pip install -r requirement.txt
+3. Run the app
+    streamlit run app.py
+
 For running Migrations
 source - https://medium.com/@peytonrunyan/alembic-101-897f322c9334
 
