@@ -13,7 +13,7 @@ class Topic(Base):
     __tablename__ = 'topics'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    topic_name = Column(String)
+    topic_name = Column(String, unique=True)
     parent_topic_id = Column(Integer)
     is_linkedin_scanned_skill = Column(Boolean)
 
