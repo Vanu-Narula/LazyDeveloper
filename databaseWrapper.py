@@ -1,6 +1,7 @@
 from model import Topic, UserProfile, ArticleTitle, ArticleContent
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import MetaData, create_engine
+from sqlalchemy import func
 
 
 class db_wrapper:
@@ -10,17 +11,28 @@ class db_wrapper:
         self.session = self.Session()
         self.metadata = MetaData()
 
-    def add_new_topics(self, topic_list):
+    def add_new_topics(self, topic_list, is_primary=True, parent_topic_id=None):
+        new_topics = []
+        failed_topics = []
+
         for topic in topic_list:
-            new_topic = Topic(topic_name=topic, parent_topic_id=None, is_linkedin_scanned_skill=True)
-            self.session.add(new_topic)
-            self.session.commit()
+            result = self.add_new_topic(topic, is_primary, parent_topic_id)
+            if result is not None:
+                new_topics.append(result)
+            else:
+                failed_topics.append(topic)
+
+        return new_topics, failed_topics
 
     def add_new_topic(self, topic, is_primary, parent_topic_id=None):
         new_topic = Topic(topic_name=topic, parent_topic_id=parent_topic_id, is_linkedin_scanned_skill=is_primary)
-        self.session.add(new_topic)
-        self.session.commit()
-        return new_topic.to_dict()
+        try:
+            self.session.add(new_topic)
+            self.session.commit()
+            return new_topic.to_dict()
+        except:
+            self.session.rollback()
+            return None
 
     def get_all_topics(self):
         topics = self.session.query(Topic).all()

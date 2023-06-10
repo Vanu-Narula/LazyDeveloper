@@ -2,7 +2,7 @@ import json, time, os
 import streamlit as st
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
-import langChainWrapper
+from langChainWrapper import LangChainWrapper
 from databaseWrapper import db_wrapper
 
 def user_input_submit():
@@ -46,6 +46,7 @@ def main():
                         page_icon=':🦥:'
     )
     db = db_wrapper(os.environ['SQLite_path'])
+    langChain = LangChainWrapper()
 
     user_name = ''
     skills = []
@@ -61,7 +62,7 @@ def main():
             with st.spinner("Loading..."):
                 if pdf is not None:
                     text = extract_pdf_text(pdf)
-                    response = langChainWrapper.get_profile_info(text)
+                    response = langChain.get_profile_info(text)
                     success = st.success("Done!")
                     json_obj = json.loads(response[0])
                     user_name = json_obj["name"]
@@ -74,7 +75,7 @@ def main():
                     if len(skills) > 0:
                         for skill in skills:
                             st.caption(skill)
-                        db.add_new_topics(skills)
+                        db.add_new_topics(skills, True, None)
                         time.sleep(2)
                         success.empty()
                         st.experimental_rerun()
@@ -114,25 +115,29 @@ def main():
 
         # Display rows
         for i, row in enumerate(st.session_state.rows):
-            st.divider()
-            st.info(row['label']['topic_name'])
+            # st.divider()
+            # st.info(row['label']['topic_name'])
             
             delete_button_key = f"delete_{i}"
             write_button_key = f"write_{i}"
             create_subtopic_key = f"create_{i}"
             
             button_container = st.empty()
-            delete_button_col, write_button_col, create_subtopic_col = button_container.columns([1, 1, 1])
-            if delete_button_col.button(f"Delete Row", key=delete_button_key):
+            info_col, delete_button_col, write_button_col, create_subtopic_col = button_container.columns([2, 1, 1, 1])
+            info_col.info(row['label']['topic_name'])
+            if delete_button_col.button(f"Delete Row", key=delete_button_key, use_container_width=True):
                 st.session_state.rows = delete_rows(st.session_state.rows, [i])
                 db.delete_topic(row['label']['id'])
                 st.experimental_rerun()
                 
-            if write_button_col.button("Write Article", key=write_button_key):
+            if write_button_col.button("Write Article", key=write_button_key, use_container_width=True):
                 write_article(st.session_state.rows, i)
 
-            if create_subtopic_col.button("Gen subtopic", key=create_subtopic_key):
-                create_subtopic()
+            if create_subtopic_col.button("Gen subtopic", key=create_subtopic_key, use_container_width=True):
+                list_of_sub_topics = langChain.create_sub_topics(row['label']['topic_name'])
+                added_topic, failed_topics = db.add_new_topics(list_of_sub_topics, False, row['label']['id'])
+                for sub_topics in added_topic:
+                    add_new_row(sub_topics)
 
 
 if __name__ == '__main__':
