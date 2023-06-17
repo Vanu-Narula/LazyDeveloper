@@ -1,8 +1,8 @@
 from model import Topic, UserProfile, ArticleTitle, ArticleContent
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import MetaData, create_engine
+from sqlalchemy.orm import declarative_base
 from sqlalchemy import func
-
 
 class db_wrapper:
     def __init__(self, db_path):
@@ -10,6 +10,7 @@ class db_wrapper:
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
         self.metadata = MetaData()
+        self.metadata.bind = self.engine
 
     def add_new_topics(self, topic_list, is_primary=True, parent_topic_id=None):
         new_topics = []
