@@ -1,9 +1,12 @@
 from sqlalchemy import create_engine, Column, Integer, String, Boolean
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 # Create the engine to connect to the SQLite database
-# engine = create_engine('sqlite:///database.db', echo=False)  # Replace with your database file path
+engine = create_engine(os.environ['SQLite_path'], echo=False)  # Replace with your database file path
 
 # Create a base class for declarative models
 Base = declarative_base()
@@ -50,7 +53,7 @@ class ArticleContent(Base):
     is_publish = Column(Boolean)
 
 # Create the tables in the database, if they don't exist
-# Base.metadata.create_all(engine)
+Base.metadata.create_all(engine)
 
 # Create a session to interact with the database
 # Session = sessionmaker(bind=engine)

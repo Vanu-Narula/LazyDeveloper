@@ -16,8 +16,9 @@ def add_new_row(row_label):
 def create_new_row(label):
     return {
         'label': label,
-        'delete': False,
-        'write_article': False
+        'write_article': False,
+        'title': 'title_text',
+        'article': 'article_text'
     }
 
 def delete_rows(rows, indices):
@@ -109,10 +110,13 @@ def main():
                 new_topic = db.add_new_topic(st.session_state.topic_user_input, False)
                 add_new_row(new_topic)
         if topics and not st.session_state.topic_added:
+            # Add topic in session row for display
             for topic in topics:
                 add_new_row(topic)
                 st.session_state.topic_added = True
 
+        title_text = "No Title generated yet."
+        article_text = "No Article generated yet."
         # Display rows
         for i, row in enumerate(st.session_state.rows):
             # st.divider()
@@ -121,23 +125,34 @@ def main():
             delete_button_key = f"delete_{i}"
             write_button_key = f"write_{i}"
             create_subtopic_key = f"create_{i}"
+
+            topic_name = row['label']['topic_name']
+            topic_id = row['label']['id']
             
             button_container = st.empty()
             info_col, delete_button_col, write_button_col, create_subtopic_col = button_container.columns([2, 1, 1, 1])
-            info_col.info(row['label']['topic_name'])
+            info_col.info(topic_name)
             if delete_button_col.button(f"Delete Row", key=delete_button_key, use_container_width=True):
                 st.session_state.rows = delete_rows(st.session_state.rows, [i])
                 db.delete_topic(row['label']['id'])
                 st.experimental_rerun()
                 
             if write_button_col.button("Write Article", key=write_button_key, use_container_width=True):
+                full_topic_name = db.get_full_topic_name(topic_id)
+                title_text, article_text = langChain.article_generator(full_topic_name.replace('\n',''))
                 write_article(st.session_state.rows, i)
+                db.update_article_title(topic_id,title_text)
+                db.update_article(topic_id,article_text)
 
             if create_subtopic_col.button("Gen subtopic", key=create_subtopic_key, use_container_width=True):
-                list_of_sub_topics = langChain.create_sub_topics(row['label']['topic_name'])
+                list_of_sub_topics = langChain.create_sub_topics(topic_name)
                 added_topic, failed_topics = db.add_new_topics(list_of_sub_topics, False, row['label']['id'])
                 for sub_topics in added_topic:
                     add_new_row(sub_topics)
+
+            article_expander = st.expander('Article about the topic', expanded=False)
+            # article_expander.subheader(title_text)
+            article_expander.markdown(article_text)
 
 
 if __name__ == '__main__':
