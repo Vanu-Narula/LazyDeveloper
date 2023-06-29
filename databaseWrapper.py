@@ -55,7 +55,16 @@ class db_wrapper:
             'is_linkedin_scanned_skill': new_topic.is_linkedin_scanned_skill
         }
 
-
+    def get_full_topic_name(self, topic_id):
+        topic = self.session.query(Topic).get(topic_id)
+        if topic:
+            parent_topic_id = topic.parent_topic_id
+            parent_topic_name = self.get_full_topic_name(parent_topic_id) if parent_topic_id else ''
+            full_topic_name = f"{parent_topic_name} - {topic.topic_name}".strip()
+            return full_topic_name
+        else:
+            return None
+    
     def get_all_topics(self):
         topics = self.session.query(Topic).all()
         if len(topics) > 0:

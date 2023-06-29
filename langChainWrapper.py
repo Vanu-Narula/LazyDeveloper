@@ -75,8 +75,8 @@ class LangChainWrapper:
             # Define the prompt template for generating sub-topics
             topics_gen_template = PromptTemplate(
                 input_variables=['topic_name'],
-                template="""Your are expert tutorial writer, write five to ten short sub topics about {topic_name}. Remember
-                         the sub topics should be about latest trends and on which tutorial could be further written. \n{format_instructions}
+                template="""Your are expert tutorial writer, write five to ten short sub topics in comma separated list about {topic_name} Remember
+                         the sub topics should be about latest trends and on which tutorial could be further written. Also remember the same topic should not be present in your output. \n{format_instructions}
                          """,
                 partial_variables={"format_instructions": format_instructions}
             )

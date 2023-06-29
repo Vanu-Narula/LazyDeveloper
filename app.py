@@ -138,7 +138,8 @@ def main():
                 st.experimental_rerun()
                 
             if write_button_col.button("Write Article", key=write_button_key, use_container_width=True):
-                title_text, article_text = langChain.article_generator(topic_name)
+                full_topic_name = db.get_full_topic_name(topic_id)
+                title_text, article_text = langChain.article_generator(full_topic_name.replace('\n',''))
                 write_article(st.session_state.rows, i)
                 db.update_article_title(topic_id,title_text)
                 db.update_article(topic_id,article_text)
