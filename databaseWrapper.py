@@ -204,6 +204,3 @@ class db_wrapper:
         self.metadata.drop_all(bind=self.engine)
         self.metadata.bind = self.engine
         self.metadata.create_all(bind=self.engine)
-
-
-    

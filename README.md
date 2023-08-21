@@ -16,6 +16,7 @@ LazyDeveloper is a content generation tool designed for developers. Using the po
 
 
 ## For Migrations
+For running Migrations
 source - https://medium.com/@peytonrunyan/alembic-101-897f322c9334
 
 1. Delete the migration directory and run command - alembic init migrations
