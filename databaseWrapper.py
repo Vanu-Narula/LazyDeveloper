@@ -18,11 +18,15 @@ class db_wrapper:
         failed_topics = []
 
         for topic in topic_list:
-            result = self.add_new_topic(topic, is_primary, parent_topic_id)
-            if result is not None:
-                new_topics.append(result)
-            else:
-                failed_topics.append(topic)
+            try:
+                result = self.add_new_topic(topic, is_primary, parent_topic_id)
+                if result is not None:
+                    new_topics.append(result)
+                else:
+                    failed_topics.append(topic)
+            except Exception as e:
+                continue
+
 
         return new_topics, failed_topics
 
@@ -42,7 +46,7 @@ class db_wrapper:
 
         except SQLAlchemyError as e:
             self.session.rollback()
-            raise e
+            return None
 
         finally:
             self.session.close()
@@ -200,6 +204,3 @@ class db_wrapper:
         self.metadata.drop_all(bind=self.engine)
         self.metadata.bind = self.engine
         self.metadata.create_all(bind=self.engine)
-
-
-    
