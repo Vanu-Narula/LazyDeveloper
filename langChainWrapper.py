@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from langchain.llms import OpenAI
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
-from langchain.output_parsers import CommaSeparatedListOutputParser
+from langchain.output_parsers import PydanticOutputParser
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.memory import ConversationBufferMemory
@@ -14,7 +14,12 @@ from langchain.callbacks import get_openai_callback
 from langchain.utilities import WikipediaAPIWrapper
 from langchain.tools import DuckDuckGoSearchResults
 from logging import Logger
+from pydantic import BaseModel, Field
+from typing import List
 
+
+class SubTopicList(BaseModel):
+    topic_list: List[str] = Field(description="Short sub topic name")
 
 class LangChainWrapper:
     def __init__(self):
@@ -46,7 +51,10 @@ class LangChainWrapper:
                 pickle.dump(knowledge_base, f)
 
             to_be_searched = "What is the name and skills of the person?"
-            prompt_query = "Return the full name and skills of the person in JSON format. Don't add any extra sentence, response should be just JSON."
+            prompt_query = """Return the full name and skills of the person in JSON format. Don't add any extra sentence, response should be just JSON:
+            {"name": "extracted_name",
+             "skills": "List of skills" }
+            """
 
             # Load QA chain and run the query
             chain = load_qa_chain(ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0),
@@ -69,16 +77,14 @@ class LangChainWrapper:
         try:
             self.logger.info("Creating sub-topics...")
             
-            output_parser = CommaSeparatedListOutputParser()
-            format_instructions = output_parser.get_format_instructions()
+            output_parser = PydanticOutputParser(pydantic_object=SubTopicList)
 
             # Define the prompt template for generating sub-topics
             topics_gen_template = PromptTemplate(
                 input_variables=['topic_name'],
-                template="""Your are expert tutorial writer, write five to ten short sub topics in comma separated list about {topic_name} Remember
-                         the sub topics should be about latest trends and on which tutorial could be further written. Also remember the same topic should not be present in your output. \n{format_instructions}
+                template="""Your are expert tutorial writer, write five to ten short sub topics about {topic_name} Remember the sub topics should be about latest trends and on which article could be further written. Also remember the input topic should not be present in your output. Do not provide any numbering with the topic. {format_instructions}
                          """,
-                partial_variables={"format_instructions": format_instructions}
+                partial_variables={"format_instructions": output_parser.get_format_instructions()}
             )
 
             llm = OpenAI(temperature=0.9, model_name="gpt-3.5-turbo", max_tokens=300)
@@ -88,8 +94,7 @@ class LangChainWrapper:
             sub_topics = topic_chain.run(topic_name)
 
             self.logger.info("Sub-topics created successfully.")
-            # print(list(output_parser.parse(sub_topics)))
-            return list(output_parser.parse(sub_topics))
+            return output_parser.parse(sub_topics).topic_list
         except Exception as e:
             self.logger.error("Error occurred while creating sub-topics.")
             self.logger.exception(str(e))
@@ -107,6 +112,11 @@ class LangChainWrapper:
             template='Your are expert tutorial title writer, write a short and catchy title about {topic}. Title should make readers want to click and read' 
         )
 
+        section_template = PromptTemplate(
+            input_variables= ['title', 'wiki_research', 'search_results'],
+            template='You are expert article writer, create an outline for the article in form of an exhaustive list of sections for the article for the provided title : {title}. Use this wikipedia research and search results while creating the sections, identify if the title is technical in nature then do include sections which could show case code snippets. RESEARCH: {wiki_research} \nSEARCH RESULTS: {search_results}'
+        )
+
         article_template = PromptTemplate(
             input_variables= ['title', 'wiki_research', 'search_results'],
             template='Your are expert tutorial writer, write an article in form of a detailed tutorial in markdown text which includes extensive \
@@ -122,6 +132,7 @@ class LangChainWrapper:
         llm = OpenAI(temperature=0.9, model_name="gpt-3.5-turbo", max_tokens=2500)
         title_chain = LLMChain(llm=llm, prompt=title_template, verbose=True, output_key='title', memory=title_memory)
         article_chain = LLMChain(llm=llm, prompt=article_template, verbose=True, output_key='article', memory=article_memory)
+        section_chain = LLMChain(llm=llm, prompt=section_template, verbose=True, output_key='section_list')
         
         # sequential_chain = SequentialChain(chains=[title_chain, article_chain], \
         #                     input_variables=['topic'], output_variables=['title', 'article'], verbose=True)
@@ -138,18 +149,3 @@ class LangChainWrapper:
                 article = article_chain.run(title=title, wiki_research= wiki_research, search_results=duck_search)
 
                 return title, article
-            #     with st.expander('LLM Call Usage'):
-            #             st.info(cb)
-            # title = "Title: " + title
-
-            # st.write(title)
-            # st.write(article)
-
-            # with st.expander('Title history'):
-            #     st.info(title_memory.buffer)
-
-            # with st.expander('Article history'):
-            #     st.info(article_memory.buffer)
-
-            # with st.expander('Wikipedia Research'):
-            #     st.info(wiki_research)
