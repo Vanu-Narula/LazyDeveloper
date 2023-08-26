@@ -8,3 +8,5 @@ faiss_cpu
 alembic
 duckduckgo-search
 wikipedia
+transformers
+torch

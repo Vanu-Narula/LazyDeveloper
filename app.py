@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from PyPDF2 import PdfReader
 from langChainWrapper import LangChainWrapper
 from databaseWrapper import db_wrapper
+from paraphraser import Paraphraser
 
 def user_input_submit():
     st.session_state.topic_user_input = st.session_state.topic_input
@@ -48,6 +49,8 @@ def main():
     )
     db = db_wrapper(os.environ['SQLite_path'])
     langChain = LangChainWrapper()
+    # Instantiate the Paraphraser class
+    paraphraser = Paraphraser()
 
     user_name = ''
     skills = []
@@ -140,9 +143,12 @@ def main():
             if write_button_col.button("Write Article", key=write_button_key, use_container_width=True):
                 full_topic_name = db.get_full_topic_name(topic_id)
                 title_text, article_text = langChain.article_generator(full_topic_name.replace('\n',''))
+                # Paraphrase the generated article using the Paraphraser class
+                paraphrased_article_text = paraphraser.paraphrase_article(article_text)
                 write_article(st.session_state.rows, i)
-                db.update_article_title(topic_id,title_text)
-                db.update_article(topic_id,article_text)
+                db.update_article_title(topic_id, title_text)
+                db.update_article(topic_id, paraphrased_article_text)  # Save the paraphrased article
+
 
             if create_subtopic_col.button("Gen subtopic", key=create_subtopic_key, use_container_width=True):
                 list_of_sub_topics = langChain.create_sub_topics(topic_name)
